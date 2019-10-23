@@ -97,7 +97,7 @@ class AnalysisNetwork(Model):
         super(AnalysisNetwork, self).__init__(inputs=[inputs], outputs=[outputs])
 
         ### Manually add dot loss to conv layer, bc keras is dumb and inflexible
-        dot_reg = self._dot_reg_wrapper(self.Regularization.dot_lambda, self.Convolution.n_filters)
+        '''dot_reg = self._dot_reg_wrapper(self.Regularization.dot_lambda, self.Convolution.n_filters)
         dot_loss = dot_reg(conv_layer._trainable_weights[0])
         conv_layer.add_loss(dot_loss)
 
@@ -108,6 +108,18 @@ class AnalysisNetwork(Model):
                             "convolutional_activity_loss": self._get_activity_regularizer_loss(conv_layer.losses),
                             "convolutional_dot_loss": self._get_dot_regularizer_loss(conv_layer.losses)
                         }
+        '''
+        dot_reg = self._act_dot_reg_wrapper(self.Regularization.dot_lambda, self.Convolution.n_filters)
+        dot_loss = dot_reg(conv_output)
+        conv_layer.add_loss(dot_loss)
+
+        callback_tensor_dict = {
+                    "convolutional_output": conv_output,
+                    "predicted_labels": outputs,
+                    "convolutional_l2_loss": self._get_l2_regularizer_loss(conv_layer.losses),
+                    "convolutional_activity_loss": self._get_activity_regularizer_loss(conv_layer.losses),
+                    "convolutional_dot_loss": self._get_dot_regularizer_loss(conv_layer.losses)
+                }
 
         self.callback_tensor_dict = callback_tensor_dict
 
@@ -130,6 +142,55 @@ class AnalysisNetwork(Model):
         dot_tensor = dot_tensor_list[0]
         return dot_tensor
 
+    def _act_dot_reg_wrapper(self, dot_lambda, n_filters):
+
+        def act_dot_reg(conv_output):
+            if n_filters == 1:
+                return backend.variable(0, name="dot_regularizer")
+
+            ### Create list of every filter pair combination
+            filter_pair_list = []
+            for i in range(0, n_filters):
+                for j in range(i, n_filters):
+                    filter_pair_list.append([i, j])
+
+            ### Loop through list and feed each pair to inner product, getting a scalar for each pair. Sum these scalars
+            cos_sim_list = []
+            for i, pair in enumerate(filter_pair_list):
+                filter_input_1 = layers.Lambda(lambda x: x[:,:,:,pair[0]])(conv_output)
+                filter_input_2 = layers.Lambda(lambda x: x[:,:,:,pair[1]])(conv_output)
+                cos_sim = self._act_cosine_similarity(filter_input_1, filter_input_2)
+
+                cos_sim_list.append(cos_sim)
+
+            ### Add all dot products to get final value
+            total_sum = layers.Add()(cos_sim_list)
+            total_average_sum = layers.Lambda(lambda x: x / len(filter_pair_list))(total_sum)
+
+            ### Multiply by lambda value and rename
+            final = layers.Lambda(lambda x: x * dot_lambda)(total_average_sum)
+            final_squeeze = layers.Lambda(lambda x: backend.squeeze(x, axis=0), dtype='float32', name="dot_regularizer")(final)
+            return final_squeeze
+
+        return act_dot_reg
+
+    def _act_cosine_similarity(self, conv_output_1, conv_output_2):
+
+        dot_product_out = self._dot_product(conv_output_1, conv_output_2)
+
+        norm_1 = self._norm(conv_output_1)
+        norm_2 = self._norm(conv_output_1)
+
+        denominator = layers.Multiply()([norm_1, norm_1])
+
+        cos_sim_out = layers.Lambda(lambda x: x[0]/x[1])([dot_product_out, denominator])
+
+        cos_sim_squared = layers.Lambda(lambda x: backend.square(x))(cos_sim_out)
+        cos_sim_sqrt = layers.Lambda(lambda x: backend.sqrt(x))(cos_sim_squared)
+
+        return cos_sim_sqrt
+
+#########################################################
     def _dot_reg_wrapper(self, dot_lambda, n_filters):
 
         def dot_reg(weight_matrix):
@@ -162,7 +223,6 @@ class AnalysisNetwork(Model):
             return final_squeeze
 
         return dot_reg
-
 
     def _cosine_similarity(self, weight_matrix_1, weight_matrix_2):
 

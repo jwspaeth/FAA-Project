@@ -23,9 +23,9 @@ def create_cfg_set(flag_dict, default_dict):
 
     ### Options
     option_dictionary = {
-        "feature_names": [ ['left_wrist_x', 'left_wrist_y', 'left_wrist_z'] ],
+        "feature_names": [ ['left_wrist_x', 'left_wrist_y', 'left_wrist_z'], ['right_foot_x', 'right_foot_y', 'right_foot_z'] ],
         "n_filters": [2],
-        "dot_lambda": [0]
+        "dot_lambda": [0, .01, .1, 1, 10]
     }
 
     ### Create list of combos from the option dictionary

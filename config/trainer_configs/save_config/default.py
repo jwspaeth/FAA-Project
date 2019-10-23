@@ -4,8 +4,8 @@ _C = CN()
 
 # Define output parameters
 _C.Output = CN()
-_C.Output.batch_name = "test-1"
-_C.Output.checkpoint_trigger = 5
+_C.Output.batch_name = "new-activation-test-2"
+_C.Output.checkpoint_trigger = 1000
 
 # Define callback parameters
 _C.Callback = CN()

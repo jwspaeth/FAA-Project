@@ -36,7 +36,21 @@ class SubjectDataset(BabyDataset):
 
 		super().__init__()
 
-	def get_generator(self, batch_size=1, sample_weight_mode=None):
+	def get_full_generator(self, batch_size=1):
+		data_config = self.master_config.Core_Config.Data_Config
+		model_config = self.master_config.Core_Config.Model_Config
+
+		feature_names = data_config.feature_names
+		for_training = data_config.for_training
+
+		while True:
+
+			feature_batch = self._get_feature_batch(feature_names, for_training)
+			label_batch = self._get_label_batch(data_config, model_config)
+
+			yield (feature_batch, label_batch)
+
+	def get_training_generator(self, batch_size=1, sample_weight_mode=None):
 
 		data_config = self.master_config.Core_Config.Data_Config
 		model_config = self.master_config.Core_Config.Model_Config
@@ -54,6 +68,9 @@ class SubjectDataset(BabyDataset):
 				yield (feature_batch, label_batch, sample_weights)
 			else:
 				yield (feature_batch, label_batch)
+
+	def get_validation_generator(self):
+		return None
 
 	def _get_feature_batch(self, feature_names, for_training):
 		### Get feature batch

@@ -4,7 +4,7 @@ _C = CN()
 
 # Define output parameters
 _C.reload = False
-_C.reload_path = "results/test-1/experiment_0/"
+_C.reload_path = "results/training-test-1/experiment_0/"
 
 def get_cfg_defaults():
   """Get a yacs CfgNode object with default values for my_project."""

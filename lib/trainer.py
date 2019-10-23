@@ -37,17 +37,6 @@ def train(master_config):
     save_config = master_config.Core_Config.Save_Config
     train_config = master_config.Train_Config
 
-    '''### Unload configurations
-    data_config = master_config.Core_Config.Data_Config
-    model_config = master_config.Core_Config.Model_Config
-    save_config = master_config.Core_Config.Save_Config
-    train_config = master_config.Train_Config
-
-    ### Build model
-    model = build_model(master_config)
-    if not model:
-        return False'''
-
     ### Generate sample weighting
     sample_weight_mode = None
     if train_config.sample_weight_mode is not False:
@@ -56,8 +45,12 @@ def train(master_config):
     ### Create dataset
     dataset = create_dataset(master_config)
 
-    ### Get dataset generator
-    dataset_generator = dataset.get_generator(batch_size=train_config.batch_size, sample_weight_mode=sample_weight_mode)
+    ### Get training generator
+    training_generator = dataset.get_training_generator(
+        batch_size=train_config.batch_size, sample_weight_mode=sample_weight_mode)
+
+    ### Get validation generator
+    validation_generator = dataset.get_validation_generator()
 
     ### Generate optimizer and compile model
     optimizer = None
@@ -69,16 +62,21 @@ def train(master_config):
                  metrics=get_metrics(model))
 
     ### Print model summary
-    #model.summary()
+    model.summary()
 
     ### Feed (dataset, label) pair
     callbacks = None
     if save_config.Callback.exists:
         callbacks = import_callbacks(master_config)
 
+    features, labels, _ = next(training_generator)
+
     if train_config.n_epochs != 0:
-        model.fit_generator(dataset_generator, steps_per_epoch=1, epochs=train_config.n_epochs, verbose=train_config.verbose,
-            callbacks=callbacks)
+        '''model.fit_generator(training_generator, steps_per_epoch=1,
+            validation_data=validation_generator, validation_steps=train_config.vsteps, validation_freq=train_config.vfreq,
+            epochs=train_config.n_epochs, verbose=train_config.verbose, callbacks=callbacks)'''
+        model.fit(features, labels, epochs=train_config.n_epochs, verbose=train_config.verbose,
+                callbacks=callbacks, sample_weight=dataset._get_sample_weights(model_config), batch_size=train_config.batch_size)
     else:
         model.evaluate_generator(dataset_generator, steps=1, callbacks=callbacks, verbose=train_config.verbose)
 

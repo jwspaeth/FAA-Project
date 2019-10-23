@@ -2,7 +2,7 @@
 
 #SBATCH --partition=normal
 #SBATCH --ntasks=1
-#SBATCH --mem=1000
+#SBATCH --mem=3000
 #SBATCH --output=job-output/subprocess-%j-stdout.txt
 #SBATCH --error=job-output/subprocess--%j-stderr.txt
 #SBATCH --time=5:00:00

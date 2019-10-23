@@ -13,10 +13,9 @@ from tensorflow.keras.callbacks import Callback
 from tensorflow.keras import backend
 from tensorflow.keras import Model
 
-from lib.classes.callback_classes.MyRecordingCallback import MyRecordingCallback
 from lib.classes.dataset_classes.SubjectDataset import SubjectDataset
 
-class BabyTrainingCallback(MyRecordingCallback):
+class BabyTrainingCallback(Callback):
     '''
     BabyTrainingCallback: Custom callback for recording data during training. Built for version-3 code base
 
@@ -43,20 +42,52 @@ class BabyTrainingCallback(MyRecordingCallback):
     '''
 
     def __init__(self, master_config):
-        super(BabyTrainingCallback, self).__init__(master_config)
+        self.data_config = master_config.Core_Config.Data_Config
+        self.save_config = master_config.Core_Config.Save_Config
+        self.model_config = master_config.Core_Config.Model_Config
+
+        self.child_name = master_config.child_name
 
         self.iteration_parameters = master_config.iteration_parameters
 
         self.subject = SubjectDataset(master_config=master_config)
 
+        self.epoch_count = 0
+        self.recent_epoch_logs = 0
+        self.epoch_start_time = 0
+
+    def on_train_begin(self, logs):
+        print("Training begin!", flush=True)
+
+    def on_epoch_begin(self, epoch, logs):
+
+        self.epoch_start_time = time.time()
+
+    def on_epoch_end(self, epoch, logs):
+
+        print("Log keys: {}\n".format(logs.keys()), flush=True)
+
+        self.recent_epoch_logs = self._create_log(logs)
+        if self.epoch_count % self.save_config.Output.checkpoint_trigger == 0:
+            self._checkpoint()
+
+        self.epoch_count += 1
+
+        total_epoch_time = time.time() - self.epoch_start_time
+        print("Total epoch time: {} secs".format(total_epoch_time), flush=True)
+
     def on_train_end(self, logs):
-        super().on_train_end(logs)
+
+        print("Training finished!", flush=True)
+
+        #print("Input: {}\n\n".format(self.recent_epoch_logs["input"]), flush=True)
+        #print("Input 0: {}\n\n".format(self.recent_epoch_logs["split_input_0"]), flush=True)
+        #print("Input 1: {}\n\n".format(self.recent_epoch_logs["split_input_1"]), flush=True)
+
+        self._checkpoint()
 
         ### Save out both types of figures we're currently using
         print("Saving out figures...", flush=True)
-
-        ### Cache filter activations for later analysis
-        self._cache_filter_activations()
 
         ### Save dual fig as png and eps
         self._create_dual_figs()
@@ -69,10 +100,28 @@ class BabyTrainingCallback(MyRecordingCallback):
 
         print("Done saving figures!", flush=True)
 
-    def _checkpoint(self):
-        super()._checkpoint()
+    def on_test_batch_end(self, batch, logs):
 
+        self.recent_epoch_logs = self._create_log(logs)
+
+        self.on_train_end(logs)
+
+    def _checkpoint(self):
+        print("Checkpointing...", flush=True)
+        self._save_model()
         self._create_statistics_file()
+        print("Finished checkpointing!", flush=True)
+
+    def _save_model(self):
+        print("Saving model...", flush=True)
+        save_folder_path = "results/" + self.save_config.Output.batch_name + "/" + self.child_name
+        save_folder_path += "/model_checkpoints/"
+
+        if not os.path.exists(save_folder_path):
+            os.mkdir(save_folder_path)
+
+        self.model.save_weights(save_folder_path + "model_weights_epoch_{}.h5".format(self.epoch_count))
+        print("Model saved!", flush=True)
 
     def _create_statistics_file(self):
         
@@ -99,20 +148,6 @@ class BabyTrainingCallback(MyRecordingCallback):
             f.write("Dot loss: {}\n".format(round(convolutional_dot_loss, 5)))
 
         print("Statistics saved!", flush=True)
-
-    def _cache_filter_activations(self):
-
-        print("Caching filter activations...")
-        save_file_path = "results/" + self.save_config.Output.batch_name + "/" + self.child_name + "/filter_activation_cache/"
-
-        if not os.path.exists(save_file_path):
-            os.mkdir(save_file_path)
-
-        for i in range(self.model_config.Convolution.n_filters):
-            print("Conv output slice shape: {}".format(self.recent_epoch_logs["convolutional_output"][:,:,:,i].shape))
-            np.save(save_file_path + "filter-activations-{}.npy".format(i), self.recent_epoch_logs["convolutional_output"][:,:,:,i])
-
-        print("Caching complete!")
 
     def _get_all_feature_xyz(self):
         feature_names = copy.deepcopy(self.data_config.feature_names)

@@ -2,14 +2,20 @@ from yacs.config import CfgNode as CN
 
 _C = CN()
 
-# Define training parameters
-_C.batch_size = 1
-_C.n_epochs = 10
+# Define optimizer parameters
 _C.optimizer = "adam"
 _C.learning_rate = .001
 _C.loss = "mse"
+
+# Define training parameters
+_C.batch_size = 1
+_C.n_epochs = 40000
 _C.sample_weight_mode = "temporal"
 _C.verbose = True
+
+# Define validation parameters
+_C.vsteps = 0
+_C.vfreq = 0
 
 def get_cfg_defaults():
   """Get a yacs CfgNode object with default values for my_project."""

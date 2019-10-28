@@ -152,7 +152,10 @@ class AnalysisNetwork(Model):
             filter_pair_list = []
             for i in range(0, n_filters):
                 for j in range(i, n_filters):
-                    filter_pair_list.append([i, j])
+                    if i != j:
+                        filter_pair_list.append([i, j])
+
+            print("Filter list: {}".format(filter_pair_list))
 
             ### Loop through list and feed each pair to inner product, getting a scalar for each pair. Sum these scalars
             cos_sim_list = []
@@ -163,8 +166,14 @@ class AnalysisNetwork(Model):
 
                 cos_sim_list.append(cos_sim)
 
+            print("Cos sim list: {}".format(cos_sim_list))
+
             ### Add all dot products to get final value
-            total_sum = layers.Add()(cos_sim_list)
+            total_sum = 0
+            if len(cos_sim_list) == 1:
+                total_sum = cos_sim_list[0]
+            else:
+                total_sum = layers.Add()(cos_sim_list)
             total_average_sum = layers.Lambda(lambda x: x / len(filter_pair_list))(total_sum)
 
             ### Multiply by lambda value and rename

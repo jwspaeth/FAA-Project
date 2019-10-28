@@ -2,6 +2,7 @@
 import tensorflow as tf
 from tensorflow.keras import backend
 from tensorflow.keras.layers import Lambda
+from tensorflow.keras import layers
 
 def split(tensor, axis, keep_dims=False):
 
@@ -41,6 +42,75 @@ def map(func, tensor_list):
 	return func_output_list
 
 ##########################################
+
+class MyEncoderLayer(tf.keras.layers.Layer):
+    def __init__(self, encoder_config, name=""):
+        if name != "":
+            super(MyEncoderLayer, self).__init__(name=name)
+        else:
+            super(MyEncoderLayer, self).__init__()
+
+        ### Collect all layers of encoder
+        self.encoder_layer_list = []
+        for i in range(len(encoder_config.n_filters_list)):
+            ### Define convolution layer
+            conv_layer = layers.Conv2D(filters=encoder_config.n_filters_list[i],
+                kernel_size=encoder_config.kernel_size_list[i],
+                strides=encoder_config.n_strides_list[i],
+                padding=encoder_config.padding_list[i],
+                activation=encoder_config.activation_type_list[i])
+            conv_layer.trainable = encoder_config.trainable_list[i]
+            self.encoder_layer_list.append(conv_layer)
+
+    def call(self, inputs):
+        pipeline = inputs
+        for i in range(len(self.encoder_layer_list)):
+            pipeline = self.encoder_layer_list[i](pipeline)
+
+        outputs = pipeline
+        return outputs
+
+class MyDecoderLayer(tf.keras.layers.Layer):
+    def __init__(self, decoder_config, name=""):
+        if name != "":
+            super(MyDecoderLayer, self).__init__(name=name)
+        else:
+            super(MyDecoderLayer, self).__init__()
+
+    
+        self.decoder_layer_list = []
+        for i in range(len(decoder_config.n_filters_list)):
+            ### Define convolution layer
+            transconv_layer = layers.Conv2DTranspose(filters=decoder_config.n_filters_list[i],
+                kernel_size=decoder_config.kernel_size_list[i],
+                strides=decoder_config.n_strides_list[i],
+                padding=decoder_config.padding_list[i],
+                output_padding=decoder_config.output_padding[i],
+                activation=decoder_config.activation_type_list[i])
+            transconv_layer.trainable = decoder_config.trainable_list[i]
+            self.decoder_layer_list.append(transconv_layer)
+
+    def call(self, inputs):
+        pipeline = inputs
+        for i in range(len(self.decoder_layer_list)):
+            pipeline = self.decoder_layer_list[i](pipeline)
+
+        outputs = pipeline
+        return outputs
+
+class MyNoiserLayer(tf.keras.layers.Layer):
+    def __init__(self, noiser_config, name=""):
+        if name != "":
+            super(MyNoiserLayer, self).__init__(name=name)
+        else:
+            super(MyNoiserLayer, self).__init__()
+
+        self.gaussian_noise_variable = 0
+        self.binarizer_layer = 0
+        self.multiplication_layer = Lambda(lambda x: x[0]+x[1])
+
+    def call(self, inputs):
+        return outputs
 
 class MyInputLayer(tf.keras.layers.Layer):
 	def __init__(self, name=""):

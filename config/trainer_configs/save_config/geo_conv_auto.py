@@ -4,13 +4,13 @@ _C = CN()
 
 # Define output parameters
 _C.Output = CN()
-_C.Output.batch_name = "dummy-test-1"
+_C.Output.batch_name = "geo-encoding-loss-test-2"
 _C.Output.checkpoint_trigger = 5
 
 # Define callback parameters
 _C.Callback = CN()
 _C.Callback.exists = True
-_C.Callback.names = ["BabyTrainingCallback", "MemoryCallback", "ResetHistoryCallback"]
+_C.Callback.names = ["GeoAutoencoderCallback", "MemoryCallback", "ResetHistoryCallback"]
 _C.Callback.figwidth = 12
 _C.Callback.figheight = 2
 

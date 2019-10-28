@@ -70,7 +70,7 @@ class SubjectDataset(BabyDataset):
 				yield (feature_batch, label_batch)
 
 	def get_validation_generator(self):
-		return None
+		yield None, None, None
 
 	def _get_feature_batch(self, feature_names, for_training):
 		### Get feature batch

@@ -26,6 +26,10 @@ class MyRecordingCallback(Callback):
 
     def on_epoch_end(self, epoch, logs):
 
+        if "val_loss" in logs.keys():
+            print("val_loss: {}".format(logs["val_loss"]))
+        else:
+            print("no val_loss")
         self.recent_epoch_logs = self._create_log(logs)
         if self.epoch_count % self.save_config.Output.checkpoint_trigger == 0:
             self._checkpoint()
@@ -41,11 +45,12 @@ class MyRecordingCallback(Callback):
 
         self._checkpoint()
 
-    def on_test_batch_end(self, batch, logs):
+    '''def on_test_end(self, logs):
 
+        print("test end logs: {}".format(logs.keys()))
         self.recent_epoch_logs = self._create_log(logs)
 
-        self.on_train_end(logs)
+        self.on_train_end(logs)'''
 
     def _checkpoint(self):
         print("Checkpointing...", flush=True)

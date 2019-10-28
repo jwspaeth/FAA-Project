@@ -24,7 +24,8 @@ def train(master_config):
     ### Reload old master config if applicable
     if master_config.Core_Config.Reload_Config.reload:
         old_mcfg = reload_config(master_config.Core_Config.Reload_Config.reload_path)
-        master_config.Core_Config.Model_Config = old_mcfg.Core_Config.Model_Config.clone()
+        if not master_config.Core_Config.Reload_Config.by_name:
+            master_config.Core_Config.Model_Config = old_mcfg.Core_Config.Model_Config.clone()
 
     ### Build model based on master config
     model = build_model(master_config)
@@ -69,14 +70,28 @@ def train(master_config):
     if save_config.Callback.exists:
         callbacks = import_callbacks(master_config)
 
-    features, labels, _ = next(training_generator)
+    features_train, labels_train, __ = next(training_generator)
+    features_validation, labels_validation, __ = next(validation_generator)
+    validation_tuple = None
+    if train_config.do_validation:
+        validation_tuple = (features_validation, labels_validation)
+
+    print("Features dimensions: {}".format(features_train.shape))
 
     if train_config.n_epochs != 0:
         '''model.fit_generator(training_generator, steps_per_epoch=1,
             validation_data=validation_generator, validation_steps=train_config.vsteps, validation_freq=train_config.vfreq,
             epochs=train_config.n_epochs, verbose=train_config.verbose, callbacks=callbacks)'''
-        model.fit(features, labels, epochs=train_config.n_epochs, verbose=train_config.verbose,
-                callbacks=callbacks, sample_weight=dataset._get_sample_weights(model_config), batch_size=train_config.batch_size)
+        model.fit(
+            x=features_train,
+            y=labels_train,
+            epochs=train_config.n_epochs,
+            verbose=train_config.verbose,
+            validation_data=validation_tuple,
+            validation_freq=train_config.validation_freq,
+            callbacks=callbacks,
+            sample_weight=dataset._get_sample_weights(model_config),
+            batch_size=train_config.batch_size)
     else:
         model.evaluate_generator(dataset_generator, steps=1, callbacks=callbacks, verbose=train_config.verbose)
 
@@ -196,6 +211,9 @@ def build_model(master_config):
 
     if master_config.Core_Config.Reload_Config.reload:
         reload_path = master_config.Core_Config.Reload_Config.reload_path
-        model.load_weights(reload_path + "model_and_config/final_model_weights.h5")
+        if master_config.Core_Config.Reload_Config.by_name:
+            model.load_weights(reload_path + "model_and_config/final_model_weights.h5", by_name=True)
+        else:
+            model.load_weights(reload_path + "model_and_config/final_model_weights.h5")
 
     return model

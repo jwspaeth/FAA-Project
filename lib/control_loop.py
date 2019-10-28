@@ -70,7 +70,8 @@ def control_loop():
         cfgs = get_configs(flag_dict, default_dict)
 
         ### Spawn subprocess
-        spawn_and_manage_subprocesses(n_subprocesses=len(cfgs), flag_dict=flag_dict, test_batch_path=test_batch_path)
+        spawn_and_manage_subprocesses(n_subprocesses=len(cfgs), flag_dict=flag_dict, default_dict=default_dict, 
+            test_batch_path=test_batch_path)
 
 
 
@@ -79,7 +80,7 @@ def control_loop():
 # Helper Methods #
 ##################
 
-def spawn_and_manage_subprocesses(n_subprocesses, flag_dict, test_batch_path):
+def spawn_and_manage_subprocesses(n_subprocesses, flag_dict, default_dict, test_batch_path):
 
     ### Create subprocesses
     running_processes = []
@@ -104,7 +105,8 @@ def spawn_and_manage_subprocesses(n_subprocesses, flag_dict, test_batch_path):
 
         ### Run the subprocess and redirect stdout and stderr to log file
         print("Starting subprocess {}...\n".format(i), flush=True)
-        process = subprocess.Popen([*script_to_run, arg_type, "-subprocess_number={}".format(i)])
+        process = subprocess.Popen([*script_to_run, arg_type, "-subprocess_number={}".format(i),
+            "-cfg={}".format(default_dict["cfg"])])
         subprocess_start_time = time.time()
         
         ### If this isn't parallel, wait for the process to finish before continuing the loop
@@ -156,14 +158,7 @@ def parse_args():
 
     ### Declare default dictionary of default configuration files for every configuration type
     default_dict = {
-        "data_default": "default",
-        "save_default": "default",
-        "model_default": "default",
-        "core_default": "default",
-        "train_default": "default",
-        "evaluation_default": "default",
-        "combination_default": "default",
-        "reload_default": "default"
+        "cfg": "default"
     }
 
     if len(sys.argv) > 1:
@@ -184,10 +179,8 @@ def parse_args():
 
         ### Determine if alternative default configuration files are indicated
         for arg in sys.argv:
-            default_keys = list(default_dict.keys())
-            for key in default_keys:
-                if key in arg:
-                    default_dict[key] = arg.replace("-"+key+"=", "")
+            if "-cfg=" in arg:
+                default_dict["cfg"] = arg.replace("-cfg=", "")
 
     return flag_dict, default_dict
 
@@ -196,7 +189,7 @@ def get_configs(flag_dict, default_dict):
     ### Get config set
     import_string = ""
     if flag_dict["Experiment"]:
-        import_string = "config.trainer_configs.combination_config." + default_dict["combination_default"]
+        import_string = "config.trainer_configs.combination_config." + default_dict["cfg"]
 
     config_module = importlib.import_module(import_string)
     config_method = getattr(config_module, "get_cfg_set")
@@ -208,7 +201,7 @@ def get_test_batch_path(flag_dict, default_dict):
     ### Get save config
     import_string = ""
     if flag_dict["Experiment"]:
-        import_string = "config.trainer_configs.save_config." + default_dict["save_default"]
+        import_string = "config.trainer_configs.save_config." + default_dict["cfg"]
 
     config_module = importlib.import_module(import_string)
     config_method= getattr(config_module, "get_cfg_defaults")

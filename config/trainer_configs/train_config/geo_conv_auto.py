@@ -8,13 +8,14 @@ _C.learning_rate = .001
 _C.loss = "mse"
 
 # Define training parameters
-_C.batch_size = 1
-_C.n_epochs = 10
-_C.sample_weight_mode = "temporal"
+_C.batch_size = 32
+_C.n_epochs = 5
+_C.sample_weight_mode = False
 _C.verbose = True
 
 # Define validation parameters
-_C.validation_freq = 0
+_C.do_validation = True
+_C.validation_freq = 1
 
 def get_cfg_defaults():
   """Get a yacs CfgNode object with default values for my_project."""

@@ -22,11 +22,7 @@ def create_cfg_set(flag_dict, default_dict):
     master_cfg.Train_Config = get_train_cfg()
 
     ### Options
-    option_dictionary = {
-        "feature_names": [ ['left_wrist_x', 'left_wrist_y', 'left_wrist_z'] ],
-        "n_filters": [3],
-        "dot_lambda": [0]
-    }
+    option_dictionary = {}
 
     ### Create list of combos from the option dictionary
     combo_list = None
@@ -76,8 +72,6 @@ def create_cfg_set(flag_dict, default_dict):
             subprocess_num = flag_dict["Subprocess_Number"]
             if flag_dict["Experiment"]:
                 current_mcfg.child_name = "experiment_{}".format(subprocess_num)
-            else:
-                current_mcfg.child_name = "evaluation_{}".format(subprocess_num)
 
             cfg_set.append(current_mcfg)
 

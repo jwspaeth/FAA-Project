@@ -40,7 +40,7 @@ class FaaDenseNetwork(Model):
 
         ### Body layers
         dense_funnel = tensor_helper.MyDenseStackLayer(input_size=self.Data.input_shape[0]*self.Data.input_shape[1],
-            encoder_config=self.Dense_Funnel,
+            stack_config=self.Dense_Funnel,
             name="dense_funnel")
         dense_past = layers.Dense(units=3, activation=self.Dense_Past.activation_type, name="dense_past")
         dense_future = layers.Dense(units=3, activation=self.Dense_Future.activation_type, name="dense_future")

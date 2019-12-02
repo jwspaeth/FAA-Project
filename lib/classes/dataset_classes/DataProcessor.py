@@ -4,7 +4,7 @@ import json
 
 def data_processor(file_path):
     unpickled = pickle.load(
-        open('/Users/zakirefai/Downloads/ou_test_data_8875846_35100.pickle', 'rb'))
+        open(file_path, 'rb'))
     with open('data.csv', 'w') as outfile:
         data = json.dumps(unpickled)
         outfile.write(data)

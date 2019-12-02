@@ -34,6 +34,7 @@ class MnistAutoencoderDataset():
 		#x_test = np.where(x_test > self.threshold_value, 1, 0)
 		yield np.expand_dims(x_test, axis=3), np.expand_dims(x_test, axis=3), None
 
+	#Last three functions returns full dataset
 	def get_training_features_and_classes(self):
 		(x_train, y_train), (x_test, y_test) = mnist.load_data()
 		#x_test = np.where(x_test > self.threshold_value, 1, 0)

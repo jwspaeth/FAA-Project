@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
-from yacs.config import CfgNode as CN
-from yacs.config import load_cfg
+from lib.classes.dataset_classes.FaaDataset import FaaDataset
 
-with open("results/test_batch/experiment_0/model_and_config_folder/master_config", "rt") as cfg_file:
-	cfg = load_cfg(cfg_file)
-	print(cfg)
+def main():
+	test_dataset = FaaDataset()
+	test_dataset._load_raw_data()
+	training_inds, val_inds, feature_array, label_array = test_dataset._load_data()
+
+if __name__ == "__main__":
+	main()

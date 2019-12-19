@@ -56,7 +56,7 @@ class MyDenseStackLayer(tf.keras.layers.Layer):
         	### Define dense layer
         	dense_layer = layers.Dense(units=stack_config.n_layers_list[i],
         		activation=stack_config.activation_type_list[i])
-        	dense_layer.trainable = encoder_config.trainable_list[i]
+        	dense_layer.trainable = stack_config.trainable_list[i]
         	self.stack_layer_list.append(dense_layer)
 
     def call(self, inputs):

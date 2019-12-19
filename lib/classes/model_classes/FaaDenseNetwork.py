@@ -4,6 +4,7 @@ from tensorflow.keras.models import Model
 from tensorflow.keras import layers
 from tensorflow.keras import backend
 from tensorflow.keras import regularizers
+from tensorflow.keras.layers import Lambda
 
 import lib.tensor_helper as tensor_helper
 
@@ -23,9 +24,10 @@ class FaaDenseNetwork(Model):
         model_config = master_config.Core_Config.Model_Config
 
         self.Data = data_config
-        self.Dense_Funnel = model_config.dense_funnel
-        self.Dense_Past = model_config.dense_past
-        self.Dense_Future = model_config.dense_future
+        self.Dense_Funnel = model_config.Dense_Funnel
+        self.Dense_Past = model_config.Dense_Past
+        self.Dense_Future = model_config.Dense_Future
+        self.Regularization = model_config.Regularization
 
         self._create_model_hooks()
 
@@ -36,7 +38,7 @@ class FaaDenseNetwork(Model):
         #####################
 
         ### Input processing layers
-        flatten_input = tf.layers.Flatten(name="flatten_input")
+        flatten_input = layers.Flatten(name="flatten_input")
 
         ### Body layers
         dense_funnel = tensor_helper.MyDenseStackLayer(input_size=self.Data.input_shape[0]*self.Data.input_shape[1],
@@ -47,7 +49,7 @@ class FaaDenseNetwork(Model):
 
         ### Define output processing layers
         output_past = layers.Lambda(lambda x: x, name="output_past")
-        output_future = layers.Lamba(lambda x: x, name="output_future")
+        output_future = layers.Lambda(lambda x: x, name="output_future")
 
         #################
         # Data pipeline #
@@ -57,9 +59,11 @@ class FaaDenseNetwork(Model):
 
         ### Flatten input
         flatten_input_out = flatten_input(input_trajectory)
+        flatten_input_out = layers.BatchNormalization()(flatten_input_out)
 
         ### Pipeline body
         dense_funnel_out = dense_funnel(flatten_input_out)
+        dense_funnel_out = layers.BatchNormalization()(dense_funnel_out)
         dense_past_out = dense_past(dense_funnel_out)
         dense_future_out = dense_future(dense_funnel_out)
 
@@ -76,8 +80,8 @@ class FaaDenseNetwork(Model):
         # Record callback tensors #
         ###########################
         callback_tensor_dict = {
-                    "predicted_past_labels": output_past_out,
-                    "predicted_future_labels": output_future_out
+                    #"predicted_past_labels": output_past_out,
+                    #"predicted_future_labels": output_future_out
                 }
 
         self.callback_tensor_dict = callback_tensor_dict

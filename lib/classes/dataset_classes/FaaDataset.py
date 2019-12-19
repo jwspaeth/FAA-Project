@@ -15,45 +15,56 @@ class FaaDataset():
 
     dataset_path = "data/faa-data/"
     test_file = "ou_test_data_8875846_35100.pickle"
-    feature_length = 3
     shuffle_seed = 6 # This value needs to remain the same from run to run.
 
-    def __init__(self, master_config = None):
+    def __init__(self, master_config = None, feature_length = None):
 
         self.master_config = master_config
 
+        if master_config is not None:
+            self.feature_length = master_config.Core_Config.Data_Config.feature_length
+        else:
+            self.feature_length = feature_length
+
     def get_full_generator(self, batch_size=1):
-        (x_train, y_train), (x_test, y_test) = mnist.load_data()
-        yield None
+        training_inds, val_inds, feature_array, label_array = self._load_data()
+
+        yield [feature_array], [label_array[:,0], label_array[:,1]]
 
     def get_training_generator(self, batch_size=1, sample_weight_mode=None):
         training_inds, val_inds, feature_array, label_array = self._load_data()
 
-        yield feature_array[training_inds], label_array[training_inds], None
+        yield [feature_array[training_inds]], [label_array[training_inds, 0], label_array[training_inds, 1]], None
 
     def get_validation_generator(self):
         training_inds, val_inds, feature_array, label_array = self._load_data()
 
-        yield feature_array[val_inds], label_array[val_inds], None
+        yield [feature_array[val_inds]], [label_array[val_inds, 0], label_array[val_inds, 1]], None
 
     #Last three functions returns full dataset
     def get_training_features_and_labels(self):
         training_inds, val_inds, feature_array, label_array = self._load_data()
 
-        return feature_array[training_inds], label_array[training_inds], None
+        return [feature_array[training_inds]], [label_array[training_inds, 0], label_array[training_inds, 1]], None
 
     def get_validation_features_and_labels(self):
         training_inds, val_inds, feature_array, label_array = self._load_data()
 
-        return feature_array[val_inds], label_array[val_inds], None
+        return [feature_array[val_inds]], [label_array[val_inds, 0], label_array[val_inds, 1]], None
 
     def get_full_features_and_labels(self):
         training_inds, val_inds, feature_array, label_array = self._load_data()
 
-        return feature_array, label_array
+        return [feature_array], [label_array[:, 0], label_array[:, 1]]
 
-    def _get_sample_weights(self, model_config):
+    def get_n_samples(self):
+        shuffled_indices, segment_stack = self._load_raw_data()
+
+        return segment_stack.shape[0]
+
+    def _get_sample_weights(self, model_config=None):
         return None
+
 
     def _load_data(self, val_size=.2):
         '''

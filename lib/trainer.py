@@ -60,23 +60,52 @@ def train(master_config):
 
     model.compile(optimizer=train_config.optimizer,
                  loss=train_config.loss, sample_weight_mode=sample_weight_mode,
-                 metrics=get_metrics(model))
+                 metrics=["mse"])
 
     ### Print model summary
     model.summary()
 
-    ### Feed (dataset, label) pair
+    ### Create callbacks
     callbacks = None
     if save_config.Callback.exists:
         callbacks = import_callbacks(master_config)
 
+    ### Import training data
     features_train, labels_train, __ = next(training_generator)
+
+    ### Calibrate transforms on training data, add to model, then apply to training data
+    if train_config.transform:
+
+        ### Create transform
+        model.feature_transform = import_transform(master_config, features_train)
+
+        ### Save transform variables to disk
+        master_config = model.feature_transform.set_transform_variables(master_config)
+
+        ### Apply to features
+        features_train = model.feature_transform.normalize(features_train)
+
+        ### If regression, also apply to labels.
+        if train_config.regression:
+            labels_train = model.feature_transform.normalize(labels_train, label=True)
+
+    ### Import validation data
     features_validation, labels_validation, __ = next(validation_generator)
+
+    ### Apply calibrated transforms to validation data
+    if train_config.transform:
+        features_validation = model.feature_transform.normalize(features_validation)
+
+        ### If regression, also apply to labels
+        if train_config.regression:
+            labels_validation = model.feature_transform.normalize(labels_validation, label=True)
+
     validation_tuple = None
-    if train_config.do_validation:
+    if train_config.validation_freq > 0:
         validation_tuple = (features_validation, labels_validation)
 
-    print("Features dimensions: {}".format(features_train.shape))
+    print("Features dimensions: {}".format(features_train[0].shape))
+    print("Sample weights: {}".format(dataset._get_sample_weights()))
 
     if train_config.n_epochs != 0:
         '''model.fit_generator(training_generator, steps_per_epoch=1,
@@ -123,8 +152,27 @@ def create_dataset(master_config):
 
     return dataset
 
-def import_callbacks(master_config):
+def import_transform(master_config, data):
+    available_transforms = os.listdir("lib/classes/transform_classes")
+    available_transforms = [i.replace(".py", "") for i in available_transforms]
 
+    imported_transform = 0
+    for transform_name in master_config.Train_Config.transform:
+
+        transform_class = None
+        if transform_name in available_transforms:
+            transform_class_module = importlib.import_module("lib.classes.transform_classes." + transform_name)
+            transform_class = getattr(transform_class_module, transform_name)
+        else:
+            print("Error: transform name {} not available. Check lib/classes/transform_classes/ for available transforms".format(
+                transform_name), flush=True)
+            return False
+
+        transform = transform_class(master_config, data)
+
+    return transform
+
+def import_callbacks(master_config):
     available_callbacks = os.listdir("lib/classes/callback_classes")
     available_callbacks = [i.replace(".py", "") for i in available_callbacks]
 
@@ -150,6 +198,7 @@ def get_metrics(model):
     metrics_list = []
 
     for key, value in model.callback_tensor_dict.items():
+        print("Value: {}".format(value))
         metric = TensorMetric(tensor=value, name=key)
         metrics_list.append(metric)
 

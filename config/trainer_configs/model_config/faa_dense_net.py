@@ -13,7 +13,7 @@ _C.build_type = "subclass"
 # Define dense funnel
 df_trainable = True
 _C.Dense_Funnel = CN()
-_C.Dense_Funnel.n_layers_list = [5, 4, 3]
+_C.Dense_Funnel.n_layers_list = [18, 9, 5]
 _C.Dense_Funnel.activation_type_list = ["elu", "elu", "elu"]
 _C.Dense_Funnel.trainable_list = [df_trainable]*3
 

@@ -4,7 +4,7 @@ _C = CN()
 
 # Define output parameters
 _C.Output = CN()
-_C.Output.batch_name = "FaaDense-test-2"
+_C.Output.batch_name = "FaaDense-test-3"
 _C.Output.checkpoint_trigger = 1
 
 # Define callback parameters

@@ -44,21 +44,10 @@
 # • keras=2.2.4
 # • nomkl=3.0
 
-####################
-# Testing Schedule #
-####################
-# • Test multiple filters with sparsity
-# 	• Use single set of features, with two filters
-# 	• Use multiple sets of features, with two filters
-# 	• Use single set of features, with three filters
-# 	• Use multiple sets of features, with three filters
-# • Test on velocity data
-# • Test on multiple infant data
-# 	• Properly set temporal sample weighting for every infant
-# 	• Save filter response figures for every sample
-# • Create model to copy convolutional filter and find the proper offset
-# 	• Test on infants with which the original filter was trained
-# 	• Test on infants with cerebral palsy
+###########
+# Testing #
+###########
+For this model, we are not implementing unit testing, because it is exceedingly difficult and usually not a practice for machine learning. This model is not going to be integrated in a larger system, so integration, system, and acceptance testing is also not implemented. This is a standalone piece of software. Of course, we are still testing by evaluating the model. We do this by assessing our predicted flight path against the actual flight path, and evaluating the loss of the model.
 
 ######################
 # Development Status #

@@ -1,3 +1,5 @@
+This is a senior capstone project for computer science at the University of Oklahoma.
+
 #######################
 # Author: Will Spaeth #
 # Date: 9-10-19       #
